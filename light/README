@@ -1,0 +1,30 @@
+# Copyright 2018 Orchard Systems, Inc
+# Distributed under the terms of the GNU General Public License v2
+#
+# orchard-light
+# A gensplash/fbsplash theme created and designed for the
+# OrchardOS 1 April Demo release.
+#
+
+The following files are subject to copyright 2018 Orchard Systems, Inc
+and are released under the GNU General Public License v2:
+
+orchardos-themes/light/*.cfg
+orchardos-themes/light/images/*.jpg
+
+The following files are subject to copyright 2007 Gentoo Foundation
+and are released under the GNU General Public License v2:
+
+orchardos-themes/light/scripts/rc_exit-post
+orchardos-themes/dark/*.cfg
+orchardos-themes/dark/images/*.png
+orchardos-themes/dark/scripts/rc_exit-post
+
+orchardos-themes/{light,dark}/scripts/rc_init-pre is subject to
+copyright 2005-2007 Blackace Enterprises and is released under
+the Artistic License.
+
+orchardos-themes/dark/Vera.ttf is subject to copyright 2003 Bitstream, Inc.
+and is released under the terms listed in gentoo-livecd-2007.0/Vera.copyright
+
+Bitstream Vera is a trademark of Bitstream, Inc.
