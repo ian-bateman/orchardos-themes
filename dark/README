@@ -1,0 +1,23 @@
+# Copyright 2007 Gentoo Foundation
+# Distributed under the terms of the GNU General Public License v2
+#
+# gentoo-livecd-2007.0
+# A gensplash/fbsplash theme created and designed for the
+# Gentoo Linux 2007.0 release.
+#
+
+The following files are subject to copyright 2007 Gentoo Foundation
+and are released under the GNU General Public License v2:
+
+gentoo-livecd-2007.0/*.cfg
+gentoo-livecd-2007.0/images/*.png
+gentoo-livecd-2007.0/scripts/rc_exit-post
+
+gentoo-livecd-2007.0/scripts/rc_init-pre is subject to
+copyright 2005-2007 Blackace Enterprises and is released under
+the Artistic License.
+
+gentoo-livecd-2007.0/Vera.ttf is subject to copyright 2003 Bitstream, Inc.
+and is released under the terms listed in gentoo-livecd-2007.0/Vera.copyright
+
+Bitstream Vera is a trademark of Bitstream, Inc.

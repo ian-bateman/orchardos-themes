@@ -1,0 +1,7 @@
+#!/bin/bash
+
+if [ "${RUNLEVEL}" == "S" ]; then
+  exit 0
+fi
+
+/bin/umount -l "/etc/splash/${SPLASH_THEME}" &>/dev/null
