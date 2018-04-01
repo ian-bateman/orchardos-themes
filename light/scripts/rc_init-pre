@@ -1,0 +1,157 @@
+#!/bin/bash
+
+# $Id: rc_init-pre,v 0.9.5 2007/04/12 15:07:53 wolfwood Exp $
+#
+# rc_init-pre 0.9.5 - A splashutils icon handler script for gentoo-livecd-2007.0.
+# http://starwind.homelinux.com/
+#
+# Copyright (c) 2005-2007 Blackace Enterprises
+#
+# This program is free software; you can redistribute it and/or
+# modify it under the terms of the Artistic License as approved
+# by the Open Source Initiative.
+#
+# THIS PACKAGE IS PROVIDED AS IS AND WITHOUT ANY EXPRESS OR IMPLIED
+# WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED WARRANTIES OF
+# MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE. See the
+# Artistic License as approved by the Open Source Initiative for
+# details.
+#
+
+# SCRIPT COMMANDS
+C_BASH="/bin/bash"
+C_CP="/bin/cp"
+C_FBRES="/sbin/splash_util.static -c getres -t ${SPLASH_THEME}"
+C_MKDIR="/bin/mkdir"
+C_MOUNT="/bin/mount"
+C_MV="/bin/mv"
+C_SED="/bin/sed"
+C_TOUCH="/bin/touch"
+C_UMOUNT="/bin/umount"
+
+# SCRIPT OPTIONS
+O_LOGINFO="/bin/cat >/dev/console"
+O_LOGERR="/bin/cat >/dev/console"
+
+# SCRIPT PROPERTIES
+P_ERROR="0"
+P_THEMEDIR="/etc/splash/${SPLASH_THEME}/"
+P_TEMPDIR="${P_THEMEDIR%/}/temp/"
+P_ICONW="200"
+P_ICONH="174"
+P_ICONX="0"
+P_ICONY="0"
+P_ICONTYPE="mng"
+P_ICONS=" $( \
+  for file in ${P_THEMEDIR%/}/icons/*.mng; do
+    file="${file##*/}"
+    echo -n "${file%.mng} "
+  done \
+)"
+
+# SCRIPT ERROR CODES
+E_OPT="65"
+E_RESOLUTION="1"
+E_TEMPDIR="2"
+E_SVCDIR="3"
+
+# FUNCTIONS
+log() {
+  if [ "${1}" = "info" ]; then
+    if [ -n "${O_LOGINFO}" -a -x "${O_LOGINFO%% *}" ]; then
+      echo "${2}" | eval ${O_LOGINFO}
+    else
+      echo "${2}"
+    fi
+  fi
+  if [ "${1}" = "err" ]; then
+    if [ -n "${O_LOGERR}" -a -x "${O_LOGERR%% *}" ]; then
+      echo "${2}" | eval ${O_LOGERR}
+    else
+      echo "${2}" >&2
+    fi
+  fi
+  if [ "${1}" != "info" -a "${1}" != "err" ]; then
+    return 1
+  fi
+  return 0
+}
+
+[ -r /lib/gentoo/functions.sh ] && . /lib/gentoo/functions.sh
+
+if [ -z "${1}" ]; then
+  log err "no internal runlevel provided"
+  exit "${E_OPT}"
+elif [ "${1}" != "sysinit" -o "${RUNLEVEL}" != "S" ]; then
+  exit 0
+fi
+
+P_RESOLUTION="$($C_FBRES)"
+if [ -n "${P_RESOLUTION}" -a -n "${P_ICONW}" -a -n "${P_ICONH}" ]; then
+  P_ICONX="$(($((${P_RESOLUTION%x*} / 2)) - $((${P_ICONW} / 2))))"
+  P_ICONY="$(echo "" | awk "{f=${P_RESOLUTION#*x};ih=${P_ICONH};print int((f/2)+((f/2)-(ih/3))/2)}")"
+else
+  log err "failed to configure resolution and icon positioning"
+  exit "${E_RESOLUTION}"
+fi
+
+if [ ! -d "${P_TEMPDIR%/}/" ]; then
+  $C_MKDIR "${P_TEMPDIR%/}/" && $C_TOUCH "${P_TEMPDIR%/}/.keep"
+  if [ "$?" -ne "0" ]; then
+    log err "failed to make tempdir"
+    exit "${E_TEMPDIR}"
+  fi
+fi
+
+if [ "${P_ERROR}" -eq "0" ]; then
+  $C_MOUNT -t tmpfs none "${P_TEMPDIR%/}/"
+  if [ "$?" -ne "0" ]; then
+    log err "failed to mount tempdir"
+    P_ERROR="${E_TEMPDIR}"
+  fi
+fi
+
+if [ "${P_ERROR}" -eq "0" ]; then
+  $C_CP -dpRx $(for file in ${P_THEMEDIR%/}/*; do if [ "${file##*/}" != "temp" ]; then echo -n "${file} "; fi; done) "${P_TEMPDIR%/}/"
+  if [ "$?" -ne "0" ]; then
+    log err "failed to populate tempdir"
+    P_ERROR="${E_TEMPDIR}"
+  fi
+fi
+
+if [ "${P_ERROR}" -eq "0" ]; then
+  $C_CP "${P_TEMPDIR%/}/${P_RESOLUTION}.cfg" "${P_TEMPDIR%/}/${P_RESOLUTION}-core.cfg"
+  if [ "$?" -ne "0" ]; then
+    log err "failed to populate tempdir"
+    P_ERROR="${E_TEMPDIR}"
+  fi
+fi
+
+if [ "${P_ERROR}" -eq "0" ]; then
+  P_SERVICES="$(splash_svclist_get start)"
+  for service in ${P_SERVICES}; do
+    if [ -z "${P_ICONS/* ${service} */}" ]; then
+      if [ "${P_ICONTYPE}" = "mng" ]; then
+        echo "anim loop icons/${service}.mng ${P_ICONX} ${P_ICONY} svc_start ${service}" >>"${P_TEMPDIR%/}/${P_RESOLUTION}.cfg"
+      else
+        echo "icon icons/${service}.png ${P_ICONX} ${P_ICONY} svc_start ${service}" >>"${P_TEMPDIR%/}/${P_RESOLUTION}.cfg"
+      fi
+      echo "icon icons/${service}_started.png ${P_ICONX} ${P_ICONY} svc_started ${service}" >>"${P_TEMPDIR%/}/${P_RESOLUTION}.cfg"
+      echo "icon icons/${service}_failed.png ${P_ICONX} ${P_ICONY} svc_start_failed ${service}" >>"${P_TEMPDIR%/}/${P_RESOLUTION}.cfg"
+    fi
+  done
+fi
+
+if [ "${P_ERROR}" -eq "0" ]; then
+  $C_MOUNT --move "${P_TEMPDIR%/}" "${P_THEMEDIR%/}"
+  if [ "$?" -ne "0" ]; then
+    $C_UMOUNT -l "${P_TEMPDIR%/}/" 2>/dev/null
+    $C_UMOUNT -l "${P_THEMEDIR%/}/" 2>/dev/null
+    log err "failed to move tempdir mount"
+    P_ERROR="${E_TEMPDIR}"
+  fi
+else
+  $C_UMOUNT -l "${P_TEMPDIR%/}/" 2>/dev/null
+fi
+
+exit "${P_ERROR}"
