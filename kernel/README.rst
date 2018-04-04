@@ -21,3 +21,6 @@ Finally, configure grub to add the bootsplash path to the kernel cmdline.
 Remove any existing splash arguments for fbsplash or plymouth, then add
 ``bootsplash.bootfile=bootsplash/mybootsplash`` where the path is relative
 to the ``/lib/firmware`` directory.
+
+.. note:: The bootsplash bin needs to be rebuilt using the tools in the
+          kernel source tree if logo.gif is changed.
